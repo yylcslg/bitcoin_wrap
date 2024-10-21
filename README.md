@@ -1,6 +1,4 @@
-# UniSat Wallet SDK
 
-## Getting started
 
 This repo uses a yarn workspace. To get started, run:
 
@@ -19,6 +17,6 @@ yarn test
 
 ```shell
 
-yarn add @unisat/wallet-sdk
+####yarn add @unisat/wallet-sdk
 
 ```
