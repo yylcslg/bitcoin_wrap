@@ -1,5 +1,5 @@
 {
-  "name": "@bitcoin_wrap",
+  "name": "bitcoin_wrap",
   "version": "0.0.1",
   "description": "bitcoin wrap",
   "keywords": [
@@ -35,6 +35,7 @@
     "bitcoinjs-lib": "^6.1.6",
     "bitcore-lib": "^10.0.0",
     "ecpair": "^2.1.0",
+    "moment-timezone": "^0.5.45",
     "hdkey": "^2.1.0",
     "tiny-secp256k1": "=2.2.1"
   },
