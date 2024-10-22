@@ -24,7 +24,7 @@ export class LocalWallet implements AbstractWallet {
     wif: string,
     addressType: AddressType = AddressType.P2WPKH,
     networkType: NetworkType = NetworkType.MAINNET,
-    mnemonic = ''
+    mnemonic?: string
   ) {
     const network = toPsbtNetwork(networkType);
     const keyPair = ECPair.fromWIF(wif, network);
@@ -70,7 +70,7 @@ export class LocalWallet implements AbstractWallet {
 
   static fromWif(
     wif: string,
-    addressType: AddressType = AddressType.P2WPKH,
+    addressType: AddressType = AddressType.P2TR,
     networkType: NetworkType = NetworkType.MAINNET
   ) {
     const wallet = new LocalWallet(wif, addressType, networkType);
