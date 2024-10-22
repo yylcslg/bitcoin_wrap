@@ -26,7 +26,7 @@ function createAccount(){
 }
 function saveWallet(){
     const addressTypeDetail = getAddressTypeDetail(AddressType.P2TR);
-    const msg = 'senior spoon cupboard beach judge student chat expire attract conduct valley version';
+    const msg = '';
     const wallet = LocalWallet.fromMnemonic(addressTypeDetail.value, NetworkType.TESTNET,msg,'',addressTypeDetail.hdPath);
     const wallets =[]
     wallets.push(wallet)
