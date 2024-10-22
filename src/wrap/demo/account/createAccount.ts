@@ -38,6 +38,8 @@ function saveWallet(){
 function readText(){
     const array = readWallets('test.txt')
     console.log(array)
+
+    
 }
 
 readText();
