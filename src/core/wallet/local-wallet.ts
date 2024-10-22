@@ -1,5 +1,6 @@
 import { publicKeyToAddress, publicKeyToScriptPk, scriptPkToAddress } from '../address';
 import { ECPair, bitcoin } from '../bitcoin-core';
+import * as bip39 from 'bip39';
 import { HdKeyring, SimpleKeyring } from '../keyring';
 import { signMessageOfBIP322Simple } from '../message';
 import { NetworkType, toPsbtNetwork } from '../network';
@@ -15,20 +16,28 @@ export class LocalWallet implements AbstractWallet {
   addressType: AddressType;
   networkType: NetworkType;
   scriptPk: string;
+  wif: string;
+  privateKeyStr: string;
+  mnemonic: string;
+
   constructor(
     wif: string,
     addressType: AddressType = AddressType.P2WPKH,
-    networkType: NetworkType = NetworkType.MAINNET
+    networkType: NetworkType = NetworkType.MAINNET,
+    mnemonic = ''
   ) {
     const network = toPsbtNetwork(networkType);
     const keyPair = ECPair.fromWIF(wif, network);
-    this.keyring = new SimpleKeyring([keyPair.privateKey.toString('hex')]);
+    this.wif = keyPair.toWIF();
+    this.privateKeyStr = keyPair.privateKey.toString('hex');
+    this.keyring = new SimpleKeyring([this.privateKeyStr]);
     this.keyring.addAccounts(1);
     this.pubkey = keyPair.publicKey.toString('hex');
     this.address = publicKeyToAddress(this.pubkey, addressType, networkType);
     this.network = network;
     this.networkType = networkType;
     this.addressType = addressType;
+    this.mnemonic = mnemonic;
 
     this.scriptPk = publicKeyToScriptPk(this.pubkey, addressType, networkType);
   }
@@ -46,11 +55,9 @@ export class LocalWallet implements AbstractWallet {
       passphrase: passPhrase,
       activeIndexes: [0]
     });
-    console.log('keyring.wallets.length:', keyring.wallets.length);
     const _wallet = keyring.wallets[0];
     _wallet.network = toPsbtNetwork(networkType);
-
-    const wallet = new LocalWallet(keyring.wallets[0].toWIF(), addressType, networkType);
+    const wallet = new LocalWallet(keyring.wallets[0].toWIF(), addressType, networkType, mnemonic);
     return wallet;
   }
 
@@ -59,6 +66,20 @@ export class LocalWallet implements AbstractWallet {
     const ecpair = ECPair.makeRandom({ network });
     const wallet = new LocalWallet(ecpair.toWIF(), addressType, networkType);
     return wallet;
+  }
+
+  static fromWif(
+    wif: string,
+    addressType: AddressType = AddressType.P2WPKH,
+    networkType: NetworkType = NetworkType.MAINNET
+  ) {
+    const wallet = new LocalWallet(wif, addressType, networkType);
+    return wallet;
+  }
+
+  static generateMnemonic(addressType: AddressType, networkType: NetworkType, passPhrase?: string, hdPath?: string) {
+    const mnemonic = bip39.generateMnemonic(128);
+    return LocalWallet.fromMnemonic(addressType, networkType, mnemonic, passPhrase, hdPath);
   }
 
   getNetworkType() {
