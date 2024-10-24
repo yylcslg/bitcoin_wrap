@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import BigNumber from "bignumber.js";
 import { AddressType } from "../../../core";
 import { ADDRESS_TYPES, CHAINS_MAP, ChainType } from "../constant";
 import moment from 'moment-timezone'
@@ -20,3 +21,31 @@ export const getAddressTypeDetail = (addressType : AddressType)=>{
         return item.value === addressType;
     })
 }
+
+export function formatDate(date: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
+    const o = {
+      'M+': date.getMonth() + 1,
+      'd+': date.getDate(),
+      'h+': date.getHours(),
+      'm+': date.getMinutes(),
+      's+': date.getSeconds(),
+      'q+': Math.floor((date.getMonth() + 3) / 3),
+      S: date.getMilliseconds()
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, `${date.getFullYear()}`.substr(4 - RegExp.$1.length));
+    for (const k in o)
+      if (new RegExp(`(${k})`).test(fmt))
+        fmt = fmt.replace(RegExp.$1, RegExp.$1.length === 1 ? o[k] : `00${o[k]}`.substr(`${o[k]}`.length));
+    return fmt;
+  }
+  
+  export function satoshisToAmount(val: number) {
+    const num = new BigNumber(val);
+    return num.dividedBy(100000000).toFixed(8);
+  }
+  
+  export function amountToSatoshis(val: any) {
+    const num = new BigNumber(val);
+    return num.multipliedBy(100000000).toNumber();
+  }
+  

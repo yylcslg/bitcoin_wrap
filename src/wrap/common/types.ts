@@ -1,7 +1,6 @@
 import { AddressType } from '../../core';
 import { PaymentChannelType } from './constant';
 
-
 export interface BitcoinBalance {
   confirm_amount: string;
   pending_amount: string;
