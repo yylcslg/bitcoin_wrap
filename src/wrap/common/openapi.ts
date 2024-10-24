@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import randomstring from 'randomstring';
-import { getChain } from './utils/constantUtils';
+import { getChain, satoshisToAmount } from './utils/constantUtils';
 import { ChainType, TypeChain } from './constant';
 import { AddressRunesTokenSummary, AddressSummary, AddressTokenSummary, AddressUserToSignInput, AppSummary, Arc20Balance, BitcoinBalance, BtcPrice, DecodedPsbt, FeeSummary, InscribeOrder, Inscription, InscriptionSummary, PublicKeyUserToSignInput, RuneBalance, SignPsbtOptions, TickPriceItem, TokenBalance, TokenTransfer, ToSignInput, UTXO, UTXO_Detail, VersionDetail } from './types';
 import { bitcoin } from '../../core/bitcoin-core';
@@ -150,9 +150,42 @@ export class OpenApiService {
   }
 
   async getBTCUtxos(address: string): Promise<UTXO[]> {
-    return this.httpGet('/v5/address/btc-utxo', {
+    return await this.httpGet('/v5/address/btc-utxo', {
       address
     });
+  }
+
+  async getUnspentOutput(address: string){
+    const utxos = await this.getBTCUtxos(address);
+
+    const btcUtxos = utxos.map((v) => {
+      return {
+        txid: v.txid,
+        vout: v.vout,
+        satoshis: v.satoshis,
+        scriptPk: v.scriptPk,
+        addressType: v.addressType,
+        pubkey: this.wallet.pubkey,
+        inscriptions: v.inscriptions,
+        atomicals: v.atomicals
+      };
+    });
+
+    const spendUnavailableUtxos = []
+    let _utxos: UnspentOutput[] = (
+      spendUnavailableUtxos.map((v) => {
+        return Object.assign({}, v, { inscriptions: [], atomicals: [] });
+      }) as any
+    ).concat(btcUtxos);
+    return _utxos;
+  }
+
+  async getSafeBalance(address: string, btcUtxos?: UnspentOutput[]){
+    if(!btcUtxos){
+      btcUtxos = await this.getUnspentOutput(address);
+    }
+    const safeBalance = btcUtxos.filter((v) => v.inscriptions.length == 0).reduce((pre, cur) => pre + cur.satoshis, 0);
+    return safeBalance;
   }
 
   async getInscriptionUtxo(inscriptionId: string): Promise<UTXO> {
@@ -479,76 +512,67 @@ export class OpenApiService {
   }
 
 
-  sendBTC = async ({
+  sendBTCPsbt = async ({
     to,
-    amount,
+    toAmount,
     feeRate,
-    enableRBF,
-    btcUtxos,
+    enableRBF = true,
     memo,
     memos
   }: {
     to: string;
-    amount: number;
+    toAmount: number;
     feeRate: number;
     enableRBF: boolean;
-    btcUtxos?: UnspentOutput[];
     memo?: string;
     memos?: string[];
   }) => {
-    
-    if (btcUtxos.length == 0) {
-      throw new Error('Insufficient balance.');
+    const btcUtxos = await this.getUnspentOutput(this.wallet.address)
+    const safeBalance = await this.getSafeBalance(this.wallet.address, btcUtxos)
+
+    console.log('safeBalance:', satoshisToAmount(safeBalance), ' satoshis:', safeBalance)
+
+    if (safeBalance < toAmount) {
+      throw new Error(
+        `Insufficient balance. Non-Inscription balance(${satoshisToAmount(
+          safeBalance
+        )} ${this.chain.unit}) is lower than ${satoshisToAmount(toAmount)} ${this.chain.unit} `
+      );
     }
-
-
-    const { psbt, toSignInputs } = await txHelpers.sendBTC({
-      btcUtxos: btcUtxos,
-      tos: [{ address: to, satoshis: amount }],
-      networkType: this.chain.networkType,
-      changeAddress: this.wallet.address,
-      feeRate,
-      enableRBF,
-      memo,
-      memos
-    });
-    console.log('psbt:', psbt);
-    console.log('toSignInputs:', toSignInputs);
-
-    this.setPsbtSignNonSegwitEnable(psbt, true);
-    await this.signPsbt(psbt, toSignInputs, true);
-    this.setPsbtSignNonSegwitEnable(psbt, false);
-    return psbt;
-  };
-
-  sendAllBTC = async ({
-    to,
-    feeRate,
-    enableRBF,
-    btcUtxos
-  }: {
-    to: string;
-    feeRate: number;
-    enableRBF: boolean;
-    btcUtxos?: UnspentOutput[];
-  }) => {
 
     if (btcUtxos.length == 0) {
       throw new Error('Insufficient balance.');
     }
 
-    const { psbt, toSignInputs } = await txHelpers.sendAllBTC({
-      btcUtxos: btcUtxos,
-      toAddress: to,
-      networkType: this.chain.networkType,
-      feeRate,
-      enableRBF
-    });
+    let fnParam;
+    if (safeBalance === toAmount) {
+      fnParam = await txHelpers.sendAllBTC({
+        btcUtxos: btcUtxos,
+        toAddress: to,
+        networkType: this.chain.networkType,
+        feeRate,
+        enableRBF
+      });
+    } else {
+      fnParam = await txHelpers.sendBTC({
+        btcUtxos: btcUtxos,
+        tos: [{ address: to, satoshis: toAmount }],
+        networkType: this.chain.networkType,
+        changeAddress: this.wallet.address,
+        feeRate,
+        enableRBF,
+        memo,
+        memos
+      });
 
-    this.setPsbtSignNonSegwitEnable(psbt, true);
-    await this.signPsbt(psbt, toSignInputs, true);
-    this.setPsbtSignNonSegwitEnable(psbt, false);
-    return psbt;
+    }
+
+    this.setPsbtSignNonSegwitEnable(fnParam.psbt, true);
+    await this.signPsbt(fnParam.psbt, fnParam.toSignInputs, true);
+    this.setPsbtSignNonSegwitEnable(fnParam.psbt, false);
+
+    const rawtx = fnParam.psbt.extractTransaction().toHex()
+    return await this.pushTx(rawtx);
   };
 
   setPsbtSignNonSegwitEnable(psbt: bitcoin.Psbt, enabled: boolean) {

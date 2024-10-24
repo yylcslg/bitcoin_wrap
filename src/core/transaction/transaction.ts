@@ -117,6 +117,9 @@ export class Transaction {
   private _cacheToSignInputs: ToSignInput[] = [];
   constructor() {}
 
+  getNetworkFee() {
+    return this._cacheNetworkFee;
+  }
   setNetworkType(network: NetworkType) {
     this.networkType = network;
   }
@@ -299,6 +302,7 @@ export class Transaction {
       if (selectedUtxos.length == 0) {
         throw new WalletUtilsError(ErrorCodes.INSUFFICIENT_BTC_UTXO);
       }
+
       selectedUtxos.forEach((v) => {
         this.addInput(v);
         this._cacheToSignInputs.push({

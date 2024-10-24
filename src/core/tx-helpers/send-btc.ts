@@ -57,6 +57,7 @@ export async function sendBTC({
 
   const toSignInputs = await tx.addSufficientUtxosForFee(btcUtxos);
 
+  console.log('ts network fee:', tx.getNetworkFee());
   const psbt = tx.toPsbt();
 
   return { psbt, toSignInputs };
