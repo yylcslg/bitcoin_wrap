@@ -32,8 +32,8 @@ export class OpenApiService {
     wallet:LocalWallet;
 
 
-    constructor(chain: TypeChain, wallet: LocalWallet, addressFlag = 0) {
-        this.chain = chain;
+    constructor(chainType:ChainType, wallet: LocalWallet, addressFlag = 0) {
+        this.chain = getChain(chainType);
         this.wallet = wallet;
         this.deviceId = randomstring.generate(12)
         this.endpoint = this.chain.endpoints[0]
