@@ -323,11 +323,9 @@ export class Transaction {
       dummyBtcUtxo.satoshis = 2100000000000000;
       this.addInput(dummyBtcUtxo);
       this.addChangeOutput(0);
-
       const networkFee = await this.calNetworkFee();
       const dummyBtcUtxoSize = utxoHelper.getAddedVirtualSize(dummyBtcUtxo.addressType);
       this._cacheNetworkFee = networkFee - dummyBtcUtxoSize * this.feeRate;
-
       this.removeLastInput();
 
       this.selectBtcUtxos();

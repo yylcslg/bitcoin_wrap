@@ -1,7 +1,8 @@
 /* eslint-disable prettier/prettier */
 
 import { ChainType } from "../../common/constant"
-import { OpenApiService } from "../../common/openapi"
+import { OpenApiService } from "../../common/openapiService"
+
 import { readWallets } from "../../common/utils/file-utils"
 
 async function sendbtcTest() {
@@ -11,18 +12,18 @@ async function sendbtcTest() {
   
   console.log(wallet.address)
 
-  const openapi = new OpenApiService(ChainType.BITCOIN_TESTNET, wallet)
+  const openapiService = new OpenApiService(ChainType.BITCOIN_TESTNET, wallet)
 
-  const feeLst = await openapi.getFeeSummary();
+  const feeLst = await openapiService.openApi.getFeeSummary();
   const feeRate = feeLst.list[1].feeRate
   console.log('feeLst :', feeLst)
   console.log('avg feeRate:', feeRate)
 
-  const txid = await openapi.sendBTCPsbt({
+  const txid = await openapiService.sendBTCPsbt({
     to: toAddress,
     toAmount: 10000,
     feeRate,
-    enableRBF:true
+    enableRBF:false
   });
 
   console.log('txid:', txid)

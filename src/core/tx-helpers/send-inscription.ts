@@ -59,7 +59,6 @@ export async function sendInscription({
     index: 0,
     publicKey: assetUtxo.pubkey
   });
-
   const psbt = tx.toPsbt();
 
   return { psbt, toSignInputs };
