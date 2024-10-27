@@ -23,7 +23,7 @@ export function readWalletFile(fileName=''){
 }
 
 
-export function readWallets(fileName:string, addressType: AddressType = AddressType.P2TR, networkType: NetworkType = NetworkType.TESTNET){
+export function readWallets(fileName:string, networkType: NetworkType = NetworkType.TESTNET, addressType: AddressType = AddressType.P2TR){
     let data = fs.readFileSync(DIR_PATH +'/' + fileName,'utf-8')
     
     let arr:LocalWallet[] = []
