@@ -1,5 +1,6 @@
 /* eslint-disable prettier/prettier */
 import BigNumber from "bignumber.js";
+import randomstring from 'randomstring';
 import { AddressType } from "../../../core";
 import { ADDRESS_TYPES, CHAINS_MAP, ChainType } from "../constant";
 import moment from 'moment-timezone'
@@ -49,3 +50,7 @@ export function formatDate(date: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
     return num.multipliedBy(100000000).toNumber();
   }
   
+
+  export function randomStr(num: number){
+    return randomstring.generate(num)
+  }
